@@ -1,54 +1,179 @@
-from flask import Flask, request, render_template
-import requests
-import urllib.parse
+<!DOCTYPE html>
+<html lang="en">
 
-app = Flask(__name__)
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Video Downloader</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Raleway', sans-serif;
+        }
 
-# RapidAPI Configuration
-RAPIDAPI_HOST = "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com"
-RAPIDAPI_KEY = "c61861f807msha2b1fca42798121p1ff20ajsn067d90ecc3c2"  # আপনার API Key এখানে দিন
+        body {
+            text-align: center;
+            background-color: #f7f8fa;
+            padding: 20px;
+        }
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        instagram_url = request.form.get("instagram_url")
+        h1 {
+            font-size: 28px;
+            margin: 40px 0;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
 
-        if instagram_url:
-            try:
-                headers = {
-                    "x-rapidapi-host": RAPIDAPI_HOST,
-                    "x-rapidapi-key": RAPIDAPI_KEY
-                }
-                url = f"https://{RAPIDAPI_HOST}/get-info-rapidapi?url={instagram_url}"
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()  # HTTP error check
-                data = response.json()
+        /* Input Field */
+        .input-container {
+            margin-bottom: 20px;
+        }
 
-                if not data.get("error"):
-                    download_url = data.get("download_url")
-                    thumb_url = urllib.parse.quote(data.get("thumb"), safe=':/')
-                    caption = data.get("caption", "No Caption Available")
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
 
-                    return render_template("index.html",
-                                           download_url=download_url,
-                                           thumb_url=thumb_url,
-                                           caption=caption)
-                else:
-                    error_message = data.get("message", "ভিডিও খুঁজে পাওয়া যায়নি")
-                    return render_template("index.html", error_message=error_message)
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+        }
 
-            except requests.exceptions.RequestException as e:
-                error_message = f"একটি ত্রুটি ঘটেছে: {e}"
-                return render_template("index.html", error_message=error_message)
-            except (KeyError, TypeError) as e:
-                error_message = "ইনস্টাগ্রাম লিঙ্কটি সঠিক নয় অথবা কোনো ভিডিও খুঁজে পাওয়া যায়নি।"
-                return render_template("index.html", error_message=error_message)
-        else:
-            error_message = "অনুগ্রহ করে ইনস্টাগ্রাম লিঙ্ক প্রবেশ করুন।"
-            return render_template("index.html", error_message=error_message)
+        /* Buttons */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
 
-    return render_template("index.html")
+        button, .paste-button {
+            padding: 10px 18px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
 
+        .paste-button {
+            background-color: #28a745;
+        }
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .paste-button:hover {
+            background-color: #218838;
+        }
+
+        /* Thumbnail Section */
+        .thumbnail img {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Error or Message Section */
+        .message {
+            color: red;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        /* Links */
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 16px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Instagram Video Downloader</h1>
+
+    <!-- Input Box -->
+    <form method="POST" action="/">
+        <div class="input-container">
+            <input type="text" id="instagram_url" name="instagram_url" placeholder="Enter Instagram URL" required>
+        </div>
+        <div class="button-container">
+            <button type="button" class="paste-button" onclick="pasteClipboard()">
+                <i class="fas fa-paste"></i> Paste
+            </button>
+            <button type="submit">
+                <i class="fas fa-download"></i> Download
+            </button>
+        </div>
+    </form>
+
+    <!-- Thumbnail & Video Info Section -->
+    {% if thumb_url %}
+    <div class="thumbnail">
+        <h2>Video Thumbnail</h2>
+        <img src="{{ thumb_url }}" alt="Video Thumbnail">
+    </div>
+    {% endif %}
+
+    {% if caption %}
+    <div>
+        <h3>Caption</h3>
+        <p>{{ caption }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Download Link Section -->
+    {% if download_url %}
+    <div>
+        <h2>Download Video</h2>
+        <a href="{{ download_url }}" download>Click here to download the video</a>
+    </div>
+    {% elif error_message %}
+    <div class="message">
+        <p>{{ error_message }}</p>
+    </div>
+    {% endif %}
+
+    <script>
+        function pasteClipboard() {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById('instagram_url').value = text;
+            }).catch(err => {
+                alert('Failed to paste from clipboard: ' + err);
+            });
+        }
+    </script>
+</body>
+
+</html>
